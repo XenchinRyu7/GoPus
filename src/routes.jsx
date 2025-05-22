@@ -1,12 +1,13 @@
 import {
-  HomeIcon,
-  UserCircleIcon,
-  TableCellsIcon,
-  InformationCircleIcon,
+  // HomeIcon,
+  // UserCircleIcon,
+  // TableCellsIcon,
+  // InformationCircleIcon,
   ServerStackIcon,
   RectangleStackIcon,
 } from "@heroicons/react/24/solid";
-import { Home, Profile, Tables, Notifications } from "@/pages/dashboard";
+import { UserIcon, HomeIcon, Bars4Icon } from "@heroicons/react/24/outline";
+import { Home, Profile, Tables, Notifications, TableUsers, TableSellers, TableOrders } from "@/pages/dashboard";
 import { SignIn, SignUp } from "@/pages/auth";
 
 const icon = {
@@ -23,23 +24,42 @@ export const routes = [
         path: "/home",
         element: <Home />,
       },
+      // {
+      //   icon: <Bars4Icon {...icon} />,
+      //   name: "Pesanan",
+      //   path: "/profile",
+      //   element: <Profile />,
+      // },
+      // {
+      //   icon: <UserIcon {...icon} />,
+      //   name: "Pedagang",
+      //   path: "/tables",
+      //   element: <Tables />,
+      // },
+
       {
-        icon: <UserCircleIcon {...icon} />,
-        name: "profile",
-        path: "/profile",
-        element: <Profile />,
+        icon: <Bars4Icon {...icon} />,
+        name: "Pesananan",
+        path: "/orders",
+        element: <TableOrders />,
+      },
+      // {
+      //   icon: <InformationCircleIcon {...icon} />,
+      //   name: "Pelanggan",
+      //   path: "/notifications",
+      //   element: <Notifications />,
+      // },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Pedagang",
+        path: "/sellers",
+        element: <TableSellers />,
       },
       {
-        icon: <TableCellsIcon {...icon} />,
-        name: "tables",
-        path: "/tables",
-        element: <Tables />,
-      },
-      {
-        icon: <InformationCircleIcon {...icon} />,
-        name: "notifications",
-        path: "/notifications",
-        element: <Notifications />,
+        icon: <UserIcon {...icon} />,
+        name: "Users",
+        path: "/users",
+        element: <TableUsers />,
       },
     ],
   },

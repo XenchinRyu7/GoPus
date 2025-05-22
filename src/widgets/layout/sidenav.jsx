@@ -27,7 +27,8 @@ export function Sidenav({ brandImg, brandName, routes }) {
       <div
         className={`relative`}
       >
-        <Link to="/" className="py-6 px-8 text-center">
+        <Link to="/" className="py-6 px-8 text-center flex items-center justify-center gap-2">
+          <img src={brandImg} alt="brand" className="h-8 w-8 object-contain" />
           <Typography
             variant="h6"
             color={sidenavType === "dark" ? "white" : "blue-gray"}
@@ -65,15 +66,13 @@ export function Sidenav({ brandImg, brandName, routes }) {
                 <NavLink to={`/${layout}${path}`}>
                   {({ isActive }) => (
                     <Button
-                      variant={isActive ? "gradient" : "text"}
-                      color={
-                        isActive
-                          ? sidenavColor
-                          : sidenavType === "dark"
-                          ? "white"
-                          : "blue-gray"
-                      }
-                      className="flex items-center gap-4 px-4 capitalize"
+                      variant={isActive && sidenavColor === "green" ? "text" : isActive ? "gradient" : "text"}
+                      color={isActive && sidenavColor === "green" ? undefined : isActive ? sidenavColor : sidenavType === "dark" ? "white" : "blue-gray"}
+                      className={`flex items-center gap-4 px-4 capitalize ${
+                        isActive && sidenavColor === "green"
+                          ? "!bg-[#00B07426] !border-[#00B07426] !text-[#00B074] !shadow-none"
+                          : ""
+                      }`}
                       fullWidth
                     >
                       {icon}
@@ -96,8 +95,8 @@ export function Sidenav({ brandImg, brandName, routes }) {
 }
 
 Sidenav.defaultProps = {
-  brandImg: "/img/logo-ct.png",
-  brandName: "Material Tailwind React",
+  brandImg: "/img/favicon.png",
+  brandName: "GoPus",
 };
 
 Sidenav.propTypes = {

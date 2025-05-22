@@ -5,11 +5,15 @@ import {
   ChartBarIcon,
 } from "@heroicons/react/24/solid";
 
+import IconOrder from "./../assets/icons/Icon_Order.svg?react";
+import IconDelivered from "./../assets/icons/Icon_Delivered.svg?react";
+import IconSales from "./../assets/icons/Icon_Sales.svg?react";
+
 export const statisticsCardsData = [
   {
     color: "gray",
-    icon: BanknotesIcon,
-    title: "Today's Money",
+    icon: IconOrder,
+    title: "Total Transaksi",
     value: "$53k",
     footer: {
       color: "text-green-500",
@@ -19,8 +23,8 @@ export const statisticsCardsData = [
   },
   {
     color: "gray",
-    icon: UsersIcon,
-    title: "Today's Users",
+    icon: IconDelivered,
+    title: "Total Pengiriman",
     value: "2,300",
     footer: {
       color: "text-green-500",
@@ -30,8 +34,8 @@ export const statisticsCardsData = [
   },
   {
     color: "gray",
-    icon: UserPlusIcon,
-    title: "New Clients",
+    icon: IconOrder,
+    title: "Pesanan Masuk",
     value: "3,462",
     footer: {
       color: "text-red-500",
@@ -41,8 +45,8 @@ export const statisticsCardsData = [
   },
   {
     color: "gray",
-    icon: ChartBarIcon,
-    title: "Sales",
+    icon: IconSales,
+    title: "Total Penjualan",
     value: "$103,430",
     footer: {
       color: "text-green-500",
