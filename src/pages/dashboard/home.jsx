@@ -18,13 +18,18 @@ import {
   ArrowUpIcon,
 } from "@heroicons/react/24/outline";
 import { StatisticsCard } from "@/widgets/cards";
-import { StatisticsChart } from "@/widgets/charts";
+import { PieChart, LineChart, AreaChart, BarChart } from "@/widgets/charts/apex-charts";
 import {
   statisticsCardsData,
-  statisticsChartsData,
   projectsTableData,
   ordersOverviewData,
 } from "@/data";
+import {
+  pieChartsData,
+  orderLineChart,
+  totalRevenueAreaChart,
+  customerBarChart,
+} from "@/data/apex-charts-data";
 import { CheckCircleIcon, ClockIcon } from "@heroicons/react/24/solid";
 
 export function Home() {
@@ -48,22 +53,69 @@ export function Home() {
           />
         ))}
       </div>
-      <div className="mb-6 grid grid-cols-1 gap-y-12 gap-x-6 md:grid-cols-2 xl:grid-cols-3">
-        {statisticsChartsData.map((props) => (
-          <StatisticsChart
-            key={props.title}
-            {...props}
-            footer={
-              <Typography
-                variant="small"
-                className="flex items-center font-normal text-blue-gray-600"
-              >
-                <ClockIcon strokeWidth={2} className="h-4 w-4 text-blue-gray-400" />
-                &nbsp;{props.footer}
-              </Typography>
-            }
-          />
+      {/* Pie Charts */}
+      <div className="mb-8 grid gap-y-10 gap-x-6 md:grid-cols-2 xl:grid-cols-3">
+        {pieChartsData.map((pie, idx) => (
+          <Card key={pie.title} className="flex flex-col items-center py-6 border border-blue-gray-100 shadow-sm">
+            <Typography variant="h6" color="blue-gray" className="mb-2">
+              {pie.title}
+            </Typography>
+            <PieChart
+              series={[pie.value, 100 - pie.value]}
+              options={{
+                labels: [pie.title, "Other"],
+                colors: [pie.color, "#F3F6F9"],
+                dataLabels: { enabled: true, formatter: (val) => `${Math.round(val)}%` },
+                legend: { show: false },
+                stroke: { width: 0 },
+              }}
+              height={160}
+            />
+            <Typography variant="h4" className="mt-2 font-bold">
+              {pie.value}%
+            </Typography>
+          </Card>
         ))}
+      </div>
+      {/* Order Line Chart */}
+      <div className="mb-8 grid grid-cols-1 gap-y-12 gap-x-6 md:grid-cols-2 xl:grid-cols-3">
+        <Card className="col-span-2 border border-blue-gray-100 shadow-sm">
+          <CardHeader floated={false} shadow={false} color="transparent" className="m-0 p-6 pb-0">
+            <Typography variant="h6" color="blue-gray" className="mb-2">
+              Chart Order
+            </Typography>
+          </CardHeader>
+          <CardBody className="pt-0">
+            <LineChart {...orderLineChart} height={220} />
+          </CardBody>
+        </Card>
+        {/* Customer Map Bar Chart */}
+        <Card className="border border-blue-gray-100 shadow-sm">
+          <CardHeader floated={false} shadow={false} color="transparent" className="m-0 p-6 pb-0">
+            <div className="flex items-center justify-between">
+              <Typography variant="h6" color="blue-gray" className="mb-2">
+                Customer Map
+              </Typography>
+              <div className="bg-blue-gray-50 rounded px-2 py-1 text-xs">Weekly</div>
+            </div>
+          </CardHeader>
+          <CardBody className="pt-0">
+            <BarChart {...customerBarChart} height={220} />
+          </CardBody>
+        </Card>
+      </div>
+      {/* Total Revenue Area Chart */}
+      <div className="mb-8">
+        <Card className="border border-blue-gray-100 shadow-sm">
+          <CardHeader floated={false} shadow={false} color="transparent" className="m-0 p-6 pb-0">
+            <Typography variant="h6" color="blue-gray" className="mb-2">
+              Total Revenue
+            </Typography>
+          </CardHeader>
+          <CardBody className="pt-0">
+            <AreaChart {...totalRevenueAreaChart} height={260} />
+          </CardBody>
+        </Card>
       </div>
       <div className="mb-4 grid grid-cols-1 gap-6 xl:grid-cols-3">
         <Card className="overflow-hidden xl:col-span-2 border border-blue-gray-100 shadow-sm">

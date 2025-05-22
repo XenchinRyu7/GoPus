@@ -1,4 +1,6 @@
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { isAuthenticated, logout } from "@/utils/auth";
 import {
   Navbar,
   Typography,
@@ -29,7 +31,7 @@ import {
 export function DashboardNavbar() {
   const [controller, dispatch] = useMaterialTailwindController();
   const { fixedNavbar, openSidenav } = controller;
-  const { pathname }  = useLocation();
+  const { pathname } = useLocation();
   const [layout, page] = pathname.split("/").filter((el) => el !== "");
 
   return (
@@ -75,31 +77,9 @@ export function DashboardNavbar() {
           <div className="mr-auto md:mr-4 md:w-56">
             <Input label="Search" />
           </div>
-          <IconButton
-            variant="text"
-            color="blue-gray"
-            className="grid xl:hidden"
-            onClick={() => setOpenSidenav(dispatch, !openSidenav)}
-          >
-            <Bars3Icon strokeWidth={3} className="h-6 w-6 text-blue-gray-500" />
-          </IconButton>
-          <Link to="/auth/sign-in">
-            <Button
-              variant="text"
-              color="blue-gray"
-              className="hidden items-center gap-1 px-4 xl:flex normal-case"
-            >
-              <UserCircleIcon className="h-5 w-5 text-blue-gray-500" />
-              Sign In
-            </Button>
-            <IconButton
-              variant="text"
-              color="blue-gray"
-              className="grid xl:hidden"
-            >
-              <UserCircleIcon className="h-5 w-5 text-blue-gray-500" />
-            </IconButton>
-          </Link>
+          <span className="mx-4 text-blue-gray-200 text-xl select-none">|</span>
+          {/* User Avatar & Dropdown */}
+          <UserMenu />
           <Menu>
             <MenuHandler>
               <IconButton variant="text" color="blue-gray">
@@ -188,6 +168,58 @@ export function DashboardNavbar() {
         </div>
       </div>
     </Navbar>
+  );
+}
+
+function UserMenu() {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const data = localStorage.getItem("gopus_login");
+    if (data) {
+      setUser(JSON.parse(data));
+    }
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/auth/sign-in", { replace: true });
+  };
+
+  if (!user) return null;
+
+  // Ambil nama depan dari email dummy
+  const displayName = user.email === "admin@gopus.com" ? "Admin" : user.email.split("@")[0];
+
+  return (
+    <Menu open={open} handler={setOpen} placement="bottom-end">
+      <MenuHandler>
+        <div className="flex items-center gap-2 cursor-pointer select-none">
+          <span className="font-semibold text-blue-gray-700">Hello, {displayName}</span>
+          <Avatar
+            src="/img/team-2.jpeg"
+            alt="user"
+            size="sm"
+            variant="circular"
+          />
+        </div>
+      </MenuHandler>
+      <MenuList className="w-40">
+        <MenuItem
+          onClick={() => {
+            setOpen(false);
+            navigate("/dashboard/profile");
+          }}
+        >
+          Settings
+        </MenuItem>
+        <MenuItem onClick={handleLogout} className="text-red-500">
+          Logout
+        </MenuItem>
+      </MenuList>
+    </Menu>
   );
 }
 
