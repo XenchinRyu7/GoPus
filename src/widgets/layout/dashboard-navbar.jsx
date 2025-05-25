@@ -45,42 +45,51 @@ export function DashboardNavbar() {
       fullWidth
       blurred={fixedNavbar}
     >
-      <div className="flex flex-col-reverse justify-between gap-6 md:flex-row md:items-center">
-        <div className="capitalize">
-          <Breadcrumbs
-            className={`bg-transparent p-0 transition-all ${
-              fixedNavbar ? "mt-1" : ""
-            }`}
-          >
-            <Link to={`/${layout}`}>
+      <div className="flex justify-between gap-6 md:flex-row md:items-center">
+        <div className="capitalize flex items-center gap-2">
+          <div className="xl:hidden">
+            <IconButton
+              variant="text"
+              color="blue-gray"
+              onClick={() => setOpenSidenav(dispatch, true)}
+              className="mr-2"
+            >
+              <Bars3Icon className="h-6 w-6" />
+            </IconButton>
+          </div>
+          <div>
+            <Breadcrumbs
+              className={`hidden md:inline-flex bg-transparent p-0 transition-all ${fixedNavbar ? "mt-1" : ""}`}
+            >
+              <Link to={`/${layout}`}>
+                <Typography
+                  variant="small"
+                  color="blue-gray"
+                  className="font-normal opacity-50 transition-all hover:text-blue-500 hover:opacity-100"
+                >
+                  {layout}
+                </Typography>
+              </Link>
               <Typography
                 variant="small"
                 color="blue-gray"
-                className="font-normal opacity-50 transition-all hover:text-blue-500 hover:opacity-100"
+                className="font-normal"
               >
-                {layout}
+                {page}
               </Typography>
-            </Link>
-            <Typography
-              variant="small"
-              color="blue-gray"
-              className="font-normal"
-            >
-              {page}
-            </Typography>
-          </Breadcrumbs>
-          <Typography variant="h6" color="blue-gray">
-            {page}
-          </Typography>
+            </Breadcrumbs>
+          </div>
         </div>
         <div className="flex items-center">
-          <div className="mr-auto md:mr-4 md:w-56">
+
+          <div className="hidden md:block mr-auto md:mr-4 md:w-56">
             <Input label="Search" />
           </div>
-          <span className="mx-4 text-blue-gray-200 text-xl select-none">|</span>
+          <span className="mx-4 text-blue-gray-200 text-xl select-none xl:block hidden">|</span>
+
           {/* User Avatar & Dropdown */}
           <UserMenu />
-          <Menu>
+          <Menu className="hidden xl:block">
             <MenuHandler>
               <IconButton variant="text" color="blue-gray">
                 <BellIcon className="h-5 w-5 text-blue-gray-500" />
@@ -162,6 +171,7 @@ export function DashboardNavbar() {
             variant="text"
             color="blue-gray"
             onClick={() => setOpenConfigurator(dispatch, true)}
+            className="hidden xl:inline-flex"
           >
             <Cog6ToothIcon className="h-5 w-5 text-blue-gray-500" />
           </IconButton>
@@ -190,7 +200,6 @@ function UserMenu() {
 
   if (!user) return null;
 
-  // Ambil nama depan dari email dummy
   const displayName = user.email === "admin@gopus.com" ? "Admin" : user.email.split("@")[0];
 
   return (
