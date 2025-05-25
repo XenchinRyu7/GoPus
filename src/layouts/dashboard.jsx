@@ -9,15 +9,26 @@ import {
 } from "@/widgets/layout";
 import routes from "@/routes";
 import { useMaterialTailwindController, setOpenConfigurator } from "@/context";
+import { getUserRole } from "@/utils/auth";
 
 export function Dashboard() {
   const [controller, dispatch] = useMaterialTailwindController();
   const { sidenavType } = controller;
+  const role = getUserRole();
+  // Filter routes sesuai role user
+  const filteredRoutes = routes.map((route) =>
+    route.layout === "dashboard"
+      ? {
+          ...route,
+          pages: route.pages.filter((page) => !page.role || page.role === role),
+        }
+      : route
+  );
 
   return (
     <div className="min-h-screen bg-blue-gray-50/50">
       <Sidenav
-        routes={routes}
+        routes={filteredRoutes}
         brandImg={
           sidenavType === "dark" ? "/img/gopus_logo.png" : "/img/gopus_logo.png"
         }
@@ -35,7 +46,7 @@ export function Dashboard() {
           <Cog6ToothIcon className="h-5 w-5" />
         </IconButton>
         <Routes>
-          {routes.map(
+          {filteredRoutes.map(
             ({ layout, pages }) =>
               layout === "dashboard" &&
               pages.map(({ path, element }) => (
