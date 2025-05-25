@@ -78,6 +78,9 @@ export function DashboardNavbar() {
                 {page}
               </Typography>
             </Breadcrumbs>
+            <Typography variant="h6" color="blue-gray" className="hidden md:block">
+              {page}
+            </Typography>
           </div>
         </div>
         <div className="flex items-center">

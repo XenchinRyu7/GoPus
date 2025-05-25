@@ -8,7 +8,7 @@ import {
 } from "@heroicons/react/24/solid";
 import { UserIcon, HomeIcon, Bars4Icon } from "@heroicons/react/24/outline";
 import { Home, Profile, Tables, Notifications, TableUsers, TableSellers, TableOrders } from "@/pages/dashboard_admin";
-import { HomeUser } from "@/pages/dashboard_user";
+import { HomeUser, Product, HistoryPayment, Orders, ProfileUser } from "@/pages/dashboard_user";
 import { SignIn, SignUp } from "@/pages/auth";
 
 const icon = {
@@ -60,42 +60,42 @@ export const routes = [
         icon: <UserIcon {...icon} />,
         name: "Puspa Taman Kota",
         path: "/puspa-taman-kota",
-        element: <div>Puspa Taman Kota</div>,
+        element:<Product />,
         role: "user",
       },
       {
         icon: <UserIcon {...icon} />,
         name: "Siliwangi",
         path: "/siliwangi",
-        element: <div>Siliwangi</div>,
+        element: <Product />,
         role: "user",
       },
       {
         icon: <UserIcon {...icon} />,
         name: "Langlangbuana",
         path: "/langlangbuana",
-        element: <div>Langlangbuana</div>,
+        element: <Product />,
         role: "user",
       },
       {
         icon: <UserIcon {...icon} />,
         name: "Pesanan Saya",
         path: "/pesanan-saya",
-        element: <div>Pesanan Saya</div>,
+        element: <Orders />,
         role: "user",
       },
       {
         icon: <UserIcon {...icon} />,
         name: "Riwayat Pembelian",
         path: "/riwayat-pembelian",
-        element: <div>Riwayat Pembelian</div>,
+        element: <HistoryPayment />,
         role: "user",
       },
       {
         icon: <UserIcon {...icon} />,
         name: "Profile",
         path: "/profile",
-        element: <div>Profile</div>,
+        element: <ProfileUser />,
         role: "user",
       },
     ],

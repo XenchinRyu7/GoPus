@@ -1,4 +1,5 @@
 export * from "@/pages/dashboard_user/homeUser";
-export { default as TableUsers } from "@/pages/dashboard_admin/tableUsers";
-export { default as TableSellers } from "@/pages/dashboard_admin/tableSellers";
-export { default as TableOrders } from "@/pages/dashboard_admin/tableOrders";
+export * from "@/pages/dashboard_user/product";
+export * from "@/pages/dashboard_user/profileUser";
+export { default as HistoryPayment } from "@/pages/dashboard_user/historyPayment";
+export { default as Orders } from "@/pages/dashboard_user/orders";

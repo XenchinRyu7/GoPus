@@ -24,7 +24,7 @@ export function HomeUser() {
       data: Array.from({ length: 6 }).map(() => ({
         name: faker.commerce.productName(),
         seller: faker.company.name(),
-        location: faker.location.city(), // Mengganti cityName dengan city
+        location: faker.location.city(),
         category: faker.commerce.department(),
         image: faker.image.urlLoremFlickr({ width: 320, height: 240, category: 'food' }),
         rating: (4 + Math.random()).toFixed(1),
@@ -36,7 +36,7 @@ export function HomeUser() {
       data: Array.from({ length: 6 }).map(() => ({
         name: faker.commerce.productName(),
         seller: faker.company.name(),
-        location: faker.location.city(), // Mengganti cityName dengan city
+        location: faker.location.city(),
         category: faker.commerce.department(),
         image: faker.image.urlLoremFlickr({ width: 320, height: 240, category: 'food' }),
         rating: (4 + Math.random()).toFixed(1),
