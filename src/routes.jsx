@@ -8,6 +8,7 @@ import {
 } from "@heroicons/react/24/solid";
 import { UserIcon, HomeIcon, Bars4Icon } from "@heroicons/react/24/outline";
 import { Home, Profile, Tables, Notifications, TableUsers, TableSellers, TableOrders } from "@/pages/dashboard_admin";
+import { HomeUser } from "@/pages/dashboard_user";
 import { SignIn, SignUp } from "@/pages/auth";
 
 const icon = {
@@ -52,7 +53,7 @@ export const routes = [
         icon: <HomeIcon {...icon} />,
         name: "Dashboard",
         path: "/home",
-        element: <Home />, 
+        element: <HomeUser />, 
         role: "user",
       },
       {
