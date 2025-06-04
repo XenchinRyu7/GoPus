@@ -1,11 +1,3 @@
-import {
-  // HomeIcon,
-  // UserCircleIcon,
-  // TableCellsIcon,
-  // InformationCircleIcon,
-  ServerStackIcon,
-  RectangleStackIcon,
-} from "@heroicons/react/24/solid";
 import { UserIcon, HomeIcon, Bars4Icon } from "@heroicons/react/24/outline";
 import { Home, Profile, Tables, Notifications, TableUsers, TableSellers, TableOrders } from "@/pages/dashboard_admin";
 import { HomeUser, Product, HistoryPayment, Orders, ProfileUser } from "@/pages/dashboard_user";
@@ -54,49 +46,64 @@ export const routes = [
         name: "Dashboard",
         path: "/home",
         element: <HomeUser />, 
-        role: "user",
+        role: "customer",
       },
       {
         icon: <UserIcon {...icon} />,
         name: "Puspa Taman Kota",
         path: "/puspa-taman-kota",
         element:<Product />,
-        role: "user",
+        role: "customer",
       },
       {
         icon: <UserIcon {...icon} />,
         name: "Siliwangi",
         path: "/siliwangi",
         element: <Product />,
-        role: "user",
+        role: "customer",
       },
       {
         icon: <UserIcon {...icon} />,
         name: "Langlangbuana",
         path: "/langlangbuana",
         element: <Product />,
-        role: "user",
+        role: "customer",
       },
       {
         icon: <UserIcon {...icon} />,
         name: "Pesanan Saya",
         path: "/pesanan-saya",
         element: <Orders />,
-        role: "user",
+        role: "customer",
       },
       {
         icon: <UserIcon {...icon} />,
         name: "Riwayat Pembelian",
         path: "/riwayat-pembelian",
         element: <HistoryPayment />,
-        role: "user",
+        role: "customer",
       },
       {
         icon: <UserIcon {...icon} />,
         name: "Profile",
         path: "/profile",
         element: <ProfileUser />,
-        role: "user",
+        role: "customer",
+      },
+    ],
+  },
+  {
+    layout: "auth",
+    pages: [
+      {
+        name: "Sign In",
+        path: "/sign-in",
+        element: <SignIn />,
+      },
+      {
+        name: "Sign Up",
+        path: "/sign-up",
+        element: <SignUp />,
       },
     ],
   },

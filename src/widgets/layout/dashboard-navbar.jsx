@@ -1,6 +1,6 @@
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { isAuthenticated, logout } from "@/utils/auth";
+import { isAuthenticated, clearAuth } from "@/utils/auth";
 import {
   Navbar,
   Typography,
@@ -190,20 +190,21 @@ function UserMenu() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    const data = localStorage.getItem("gopus_login");
+    const data = localStorage.getItem("user_data");
     if (data) {
       setUser(JSON.parse(data));
     }
   }, []);
 
   const handleLogout = () => {
-    logout();
+    clearAuth();
     navigate("/auth/sign-in", { replace: true });
   };
 
   if (!user) return null;
 
-  const displayName = user.email === "admin@gopus.com" ? "Admin" : user.email.split("@")[0];
+  const displayName = user.fullname || user.email?.split("@")[0] || "User";
+  const avatarSrc = user.image || "/img/team-2.jpeg";
 
   return (
     <Menu open={open} handler={setOpen} placement="bottom-end">
@@ -211,7 +212,7 @@ function UserMenu() {
         <div className="flex items-center gap-2 cursor-pointer select-none">
           <span className="font-semibold text-blue-gray-700">Hello, {displayName}</span>
           <Avatar
-            src="/img/team-2.jpeg"
+            src={avatarSrc}
             alt="user"
             size="sm"
             variant="circular"

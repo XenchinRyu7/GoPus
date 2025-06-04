@@ -1,44 +1,38 @@
-export const DUMMY_USERS = [
-  {
-    email: "admin@gopus.com",
-    password: "GopusKuningan",
-    role: "admin",
-  },
-  {
-    email: "user@gopus.com",
-    password: "GopusUser",
-    role: "user",
-  },
-];
+const TOKEN_KEY = "auth_token";
+const USER_DATA_KEY = "user_data";
 
-export function isAuthenticated() {
-  return !!localStorage.getItem("gopus_login");
+export function setToken(token) {
+  localStorage.setItem(TOKEN_KEY, token);
 }
 
-export function login(email, password) {
-  const user = DUMMY_USERS.find(
-    (u) => u.email === email && u.password === password
-  );
-  if (user) {
-    localStorage.setItem(
-      "gopus_login",
-      JSON.stringify({ email: user.email, role: user.role })
-    );
-    return user.role;
-  }
-  return false;
+export function getToken() {
+  return localStorage.getItem(TOKEN_KEY);
 }
 
-export function logout() {
-  localStorage.removeItem("gopus_login");
+export function setUserData(userData) {
+  localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
 }
 
-export function getUserRole() {
-  const data = localStorage.getItem("gopus_login");
+export function getUserData() {
+  const data = localStorage.getItem(USER_DATA_KEY);
   if (!data) return null;
   try {
-    return JSON.parse(data).role;
+    return JSON.parse(data);
   } catch {
     return null;
   }
+}
+
+export function clearAuth() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_DATA_KEY);
+}
+
+export function isAuthenticated() {
+  return !!getToken();
+}
+
+export function getUserRole() {
+  const user = getUserData();
+  return user ? user.role : null;
 }

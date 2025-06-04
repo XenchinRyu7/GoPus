@@ -15,7 +15,6 @@ export function Dashboard() {
   const [controller, dispatch] = useMaterialTailwindController();
   const { sidenavType } = controller;
   const role = getUserRole();
-  // Filter routes sesuai role user
   const filteredRoutes = routes.map((route) =>
     route.layout === "dashboard"
       ? {
@@ -25,10 +24,20 @@ export function Dashboard() {
       : route
   );
 
+  console.log("ROLE:", role);
+  console.log("filteredRoutes:", filteredRoutes);
+
+  // Cek jika tidak ada halaman yang bisa diakses
+  const dashboardRoutes = filteredRoutes.find((r) => r.layout === "dashboard");
+  const hasPages =
+    dashboardRoutes &&
+    dashboardRoutes.pages &&
+    dashboardRoutes.pages.length > 0;
+
   return (
     <div className="min-h-screen bg-blue-gray-50/50">
       <Sidenav
-        routes={filteredRoutes}
+        routes={filteredRoutes.filter((route) => route.layout === "dashboard")}
         brandImg={
           sidenavType === "dark" ? "/img/gopus_logo.png" : "/img/gopus_logo.png"
         }
@@ -46,12 +55,23 @@ export function Dashboard() {
           <Cog6ToothIcon className="h-5 w-5" />
         </IconButton>
         <Routes>
-          {filteredRoutes.map(
-            ({ layout, pages }) =>
-              layout === "dashboard" &&
-              pages.map(({ path, element }) => (
-                <Route exact path={path} element={element} />
-              ))
+          {hasPages ? (
+            filteredRoutes.map(
+              ({ layout, pages }) =>
+                layout === "dashboard" &&
+                pages.map(({ path, element }, idx) => (
+                  <Route key={path || idx} exact path={path} element={element} />
+                ))
+            )
+          ) : (
+            <Route
+              path="*"
+              element={
+                <div className="p-8 text-center text-red-500">
+                  Tidak ada halaman yang bisa diakses untuk role ini.
+                </div>
+              }
+            />
           )}
         </Routes>
         <div className="text-blue-gray-600">
