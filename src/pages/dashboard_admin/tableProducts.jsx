@@ -37,6 +37,10 @@ import { faker } from "@faker-js/faker";
 import { twMerge } from "tailwind-merge";
 import { rankItem } from "@tanstack/match-sorter-utils";
 import { getProducts } from "@/api/product";
+import { getSellers } from "@/api/seller";
+import { addProduct, updateProduct, deleteProduct } from "@/api/product";
+import ProductViewModal from "./components/ProductViewModal";
+import ProductAddEditModal from "./components/ProductAddEditModal";
 import { getToken, getUserData } from "@/utils/auth";
 
 const fuzzyFilter = (row, columnId, value, addMeta) => {
@@ -131,13 +135,13 @@ const TableProducts = () => {
                 </IconButton>
               </MenuHandler>
               <MenuList>
-                <MenuItem className="flex items-center gap-2">
+                <MenuItem className="flex items-center gap-2" onClick={() => { setSelectedProduct(info.row.original); setViewOpen(true); }}>
                   <EyeSolid className="h-4 w-4 stroke-2" /> View
                 </MenuItem>
-                <MenuItem className="flex items-center gap-2">
+                <MenuItem className="flex items-center gap-2" onClick={() => handleEdit(info.row.original)}>
                   <EditPencil className="h-4 w-4 stroke-2" /> Edit
                 </MenuItem>
-                <MenuItem className="flex items-center gap-2 text-red-500">
+                <MenuItem className="flex items-center gap-2 text-red-500" onClick={() => handleDelete(info.row.original)}>
                   <Bin className="h-4 w-4 stroke-2" /> Delete
                 </MenuItem>
               </MenuList>
@@ -156,6 +160,19 @@ const TableProducts = () => {
     pageIndex: 0,
     pageSize: 10,
   });
+  const [merchants, setMerchants] = React.useState([]);
+  const [addOpen, setAddOpen] = React.useState(false);
+  const [editOpen, setEditOpen] = React.useState(false);
+  const [viewOpen, setViewOpen] = React.useState(false);
+  const [selectedProduct, setSelectedProduct] = React.useState(null);
+  const [addForm, setAddForm] = React.useState({ name: "", description: "", price: "", image: "", merchant_id: "", status: "available" });
+  const [addImageFile, setAddImageFile] = React.useState(null);
+  const [addSaving, setAddSaving] = React.useState(false);
+  const [addError, setAddError] = React.useState("");
+  const [editForm, setEditForm] = React.useState(null);
+  const [editImageFile, setEditImageFile] = React.useState(null);
+  const [editSaving, setEditSaving] = React.useState(false);
+  const [editError, setEditError] = React.useState("");
 
   React.useEffect(() => {
     async function fetchProducts() {
@@ -179,6 +196,21 @@ const TableProducts = () => {
       }
     }
     fetchProducts();
+  }, []);
+
+  React.useEffect(() => {
+    async function fetchMerchants() {
+      const token = getToken();
+      const user = getUserData();
+      if (!token || !user) return;
+      const res = await getSellers(token);
+      let sellers = res.data || res;
+      const adminEmail = user.email;
+      const placeId = placeIdByAdmin[adminEmail];
+      if (placeId) sellers = sellers.filter((s) => s.place_id === placeId);
+      setMerchants(sellers);
+    }
+    fetchMerchants();
   }, []);
 
   const table = useReactTable({
@@ -209,6 +241,101 @@ const TableProducts = () => {
   const pageCount = Math.ceil(data.length / pagination.pageSize);
   const pageNumbers = Array.from({ length: Math.min(5, pageCount) }, (_, i) => i);
 
+  const handleAddOpen = () => setAddOpen(!addOpen);
+  const handleAddChange = (e) => {
+    const { name, value } = e.target;
+    setAddForm((prev) => ({ ...prev, [name]: value }));
+  };
+  const handleAddImageChange = (e) => {
+    const file = e.target.files[0];
+    setAddImageFile(file);
+  };
+  const handleAddSave = async () => {
+    setAddSaving(true);
+    setAddError("");
+    try {
+      const token = getToken();
+      const formData = new FormData();
+      Object.entries(addForm).forEach(([k, v]) => formData.append(k, v));
+      if (addImageFile) formData.append("image", addImageFile);
+      await addProduct(token, formData, true);
+      setAddOpen(false);
+      setAddForm({ name: "", description: "", price: "", image: "", merchant_id: "", status: "available" });
+      setAddImageFile(null);
+      // Refresh products
+      const res = await getProducts(token);
+      let products = res.data || res;
+      const user = getUserData();
+      const adminEmail = user.email;
+      const placeId = placeIdByAdmin[adminEmail];
+      if (placeId) products = products.filter((p) => p.merchant && p.merchant.place_id === placeId);
+      setData(products);
+    } catch (e) {
+      setAddError("Gagal menambah produk");
+    } finally {
+      setAddSaving(false);
+    }
+  };
+
+  const handleEdit = (product) => {
+    setEditForm({ ...product, merchant_id: product.merchant_id || product.merchant?.id || "" });
+    setEditImageFile(null);
+    setEditError("");
+    setEditOpen(true);
+  };
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm((prev) => ({ ...prev, [name]: value }));
+  };
+  const handleEditImageChange = (e) => {
+    const file = e.target.files[0];
+    setEditImageFile(file);
+  };
+  const handleEditSave = async () => {
+    setEditSaving(true);
+    setEditError("");
+    try {
+      const token = getToken();
+      const formData = new FormData();
+      Object.entries(editForm).forEach(([k, v]) => formData.append(k, v));
+      if (editImageFile) formData.append("image", editImageFile);
+      await updateProduct(token, editForm.id, formData, true);
+      setEditOpen(false);
+      setEditForm(null);
+      setEditImageFile(null);
+      // Refresh products
+      const res = await getProducts(token);
+      let products = res.data || res;
+      const user = getUserData();
+      const adminEmail = user.email;
+      const placeId = placeIdByAdmin[adminEmail];
+      if (placeId) products = products.filter((p) => p.merchant && p.merchant.place_id === placeId);
+      setData(products);
+    } catch (e) {
+      setEditError("Gagal update produk");
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const handleDelete = async (product) => {
+    if (!window.confirm(`Yakin hapus produk ${product.name}?`)) return;
+    try {
+      const token = getToken();
+      await deleteProduct(token, product.id);
+      // Refresh products
+      const res = await getProducts(token);
+      let products = res.data || res;
+      const user = getUserData();
+      const adminEmail = user.email;
+      const placeId = placeIdByAdmin[adminEmail];
+      if (placeId) products = products.filter((p) => p.merchant && p.merchant.place_id === placeId);
+      setData(products);
+    } catch (e) {
+      alert("Gagal menghapus produk");
+    }
+  };
+
   if (loading) {
     return (
       <Card className="h-full w-full p-4 flex items-center justify-center">
@@ -232,20 +359,23 @@ const TableProducts = () => {
               <Search className="h-5 w-5 text-blue-gray-400" />
             </div>
           </div>
-          <div className="w-72">
-            <select
-              value={table.getState().pagination.pageSize}
-              onChange={(e) => {
-                table.setPageSize(Number(e.target.value));
-              }}
-              className="px-3 py-2 border border-blue-gray-200 rounded-md focus:outline-none focus:border-blue-500"
-            >
-              {[10, 20, 30, 40, 50].map((pageSize) => (
-                <option key={pageSize} value={pageSize}>
-                  Show {pageSize} entries
-                </option>
-              ))}
-            </select>
+          <div className="flex gap-2 items-center">
+            <div className="w-72">
+              <select
+                value={table.getState().pagination.pageSize}
+                onChange={(e) => {
+                  table.setPageSize(Number(e.target.value));
+                }}
+                className="px-3 py-2 border border-blue-gray-200 rounded-md focus:outline-none focus:border-blue-500"
+              >
+                {[10, 20, 30, 40, 50].map((pageSize) => (
+                  <option key={pageSize} value={pageSize}>
+                    Show {pageSize} entries
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Button color="green" onClick={handleAddOpen} className="ml-2">+ Add Product</Button>
           </div>
         </div>
         <div className="w-full overflow-hidden rounded-lg border border-blue-gray-100">
@@ -368,6 +498,9 @@ const TableProducts = () => {
           </div>
         </div>
       </CardBody>
+      <ProductViewModal open={viewOpen} onClose={() => setViewOpen(false)} product={selectedProduct} merchantName={selectedProduct?.merchant?.name || "-"} />
+      <ProductAddEditModal open={addOpen} onClose={handleAddOpen} form={addForm} onChange={handleAddChange} onSave={handleAddSave} saving={addSaving} error={addError} onImageChange={handleAddImageChange} imageFile={addImageFile} merchants={merchants} isEdit={false} />
+      <ProductAddEditModal open={editOpen} onClose={() => setEditOpen(false)} form={editForm || {}} onChange={handleEditChange} onSave={handleEditSave} saving={editSaving} error={editError} onImageChange={handleEditImageChange} imageFile={editImageFile} merchants={merchants} isEdit={true} />
     </Card>
   );
 };
