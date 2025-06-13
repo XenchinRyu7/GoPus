@@ -48,6 +48,13 @@ export const routes = [
         element: <TableProducts />,
         role: "admin",
       },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Profile",
+        path: "/profile",
+        element: <ProfileUser />, // Komponen profile untuk admin
+        role: "admin",
+      },
       // USER ROUTES
       {
         icon: <HomeIcon {...icon} />,
@@ -95,7 +102,7 @@ export const routes = [
         icon: <UserIcon {...icon} />,
         name: "Profile",
         path: "/profile",
-        element: <ProfileUser />,
+        element: <ProfileUser />, // Komponen profile untuk customer
         role: "customer",
       },
       {

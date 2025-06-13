@@ -24,9 +24,6 @@ export function Dashboard() {
       : route
   );
 
-  console.log("ROLE:", role);
-  console.log("filteredRoutes:", filteredRoutes);
-
   // Cek jika tidak ada halaman yang bisa diakses
   const dashboardRoutes = filteredRoutes.find((r) => r.layout === "dashboard");
   const hasPages =

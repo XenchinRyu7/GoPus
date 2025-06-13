@@ -23,24 +23,6 @@ const placeSections = [
 	},
 ];
 
-function getSafeImage(img) {
-	if (!img) return undefined;
-	if (img.includes("drive.google.com/open?id=")) {
-		const id = img.split("id=")[1];
-		return `https://drive.google.com/uc?export=view&id=${id}`;
-	}
-	if (img.includes("drive.google.com/file/d/")) {
-		const match = img.match(/\/d\/([\w-]+)/);
-		if (match && match[1]) {
-			return `https://drive.google.com/uc?export=view&id=${match[1]}`;
-		}
-	}
-	if (img.startsWith("/img/")) {
-		return img;
-	}
-	return undefined;
-}
-
 export function HomeUser() {
 	const [products, setProducts] = useState([]);
 	const [loading, setLoading] = useState(true);
@@ -68,15 +50,16 @@ export function HomeUser() {
 		if (p.merchant && grouped[p.merchant.place_id]) {
 			grouped[p.merchant.place_id].push({
 				...p,
-				image:
-					getSafeImage(p.image) ||
-					getSafeImage(p.merchant?.image) ||
-					"/img/default.jpg",
-				seller: p.merchant?.name || p.seller,
-				location: p.location,
+				image: p.image ? `http://localhost:3000/uploads/${p.image}` : "/img/default.jpg",
+				seller: p.merchant?.name,
+				location: p.merchant?.place_id ? placeSections.find(sec => sec.place_id === p.merchant.place_id)?.title : p.location,
 				category: p.category,
 				rating: p.rating,
+				price: p.price,
+				status: p.status,
 				onClick: () => navigate(`/dashboard/product/${p.id}`),
+				merchantOwner: p.merchant?.owner_name,
+				merchantPhone: p.merchant?.phone
 			});
 		}
 	});

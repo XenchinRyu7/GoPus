@@ -20,19 +20,191 @@ import {
 import { StatisticsCard } from "@/widgets/cards";
 import { PieChart, LineChart, AreaChart, BarChart } from "@/widgets/charts/apex-charts";
 import {
-  statisticsCardsData,
-  projectsTableData,
-  ordersOverviewData,
-} from "@/data";
+  getOrdersByPlace
+} from "@/api/order";
 import {
-  pieChartsData,
-  orderLineChart,
-  totalRevenueAreaChart,
-  customerBarChart,
-} from "@/data/apex-charts-data";
-import { CheckCircleIcon, ClockIcon } from "@heroicons/react/24/solid";
+  useAuthContext
+} from "@/context/AuthContext";
+import IconOrder from "@/assets/icons/Icon_Order.svg?react";
+import IconDelivered from "@/assets/icons/Icon_Delivered.svg?react";
+import IconSales from "@/assets/icons/Icon_Sales.svg?react";
 
 export function Home() {
+  const {
+    user
+  } = useAuthContext();
+  const [orders, setOrders] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    async function fetchOrders() {
+      setLoading(true);
+      try {
+        const placeIdByAdmin = {
+          "admin@siliwangi.com": 1,
+          "admin@langlangbuana.com": 2,
+          "admin@tamankota.com": 3,
+        };
+        const place_id = placeIdByAdmin[user?.email];
+        if (!place_id) return setOrders([]);
+        const res = await getOrdersByPlace(place_id);
+        setOrders(res.data || res);
+      } catch {
+        setOrders([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (user?.email) fetchOrders();
+  }, [user]);
+
+  // Hitung statistik
+  const totalOrders = orders.length;
+  const totalKeuntungan = orders
+    .filter(o => ["delivered", "confirmed"].includes(o.status))
+    .reduce((sum, o) => sum + (Number(o.total_price) || 0), 0); // hanya total_price, tanpa dikurangi delivery_fee
+  const pesananMasuk = orders.filter(o => o.status === "pending").length;
+  const pesananConfirmed = orders.filter(o => o.status === "confirmed").length;
+  const pesananOnDelivery = orders.filter(o => o.status === "on_delivery").length;
+  const pesananDelivered = orders.filter(o => o.status === "delivered").length;
+  const pesananCancelled = orders.filter(o => o.status === "cancelled").length;
+
+  // Ganti data statistikCardsData dengan data dinamis
+  const statisticsCardsData = [
+    {
+      color: "gray",
+      icon: IconOrder,
+      title: "Total Orders",
+      value: totalOrders,
+      footer: { color: "text-blue-500", value: pesananMasuk, label: "pending" },
+    },
+    {
+      color: "gray",
+      icon: IconDelivered,
+      title: "Delivered",
+      value: pesananDelivered,
+      footer: { color: "text-green-500", value: pesananConfirmed, label: "confirmed" },
+    },
+    {
+      color: "gray",
+      icon: IconOrder,
+      title: "On Delivery",
+      value: pesananOnDelivery,
+      footer: { color: "text-purple-500", value: pesananCancelled, label: "cancelled" },
+    },
+    {
+      color: "gray",
+      icon: IconSales,
+      title: "Total Keuntungan",
+      value: `Rp${totalKeuntungan.toLocaleString("id-ID")}`,
+      footer: { color: "text-green-500", value: pesananDelivered, label: "delivered" },
+    },
+  ];
+
+  // Pie chart dinamis
+  const totalOrderCount = orders.length;
+  const deliveredConfirmedCount = orders.filter(o => ["delivered", "confirmed"].includes(o.status)).length;
+  const uniqueCustomers = new Set(orders.map(o => o.customer?.fullname || o.customer_id)).size;
+  const totalRevenue = orders.filter(o => ["delivered", "confirmed"].includes(o.status)).reduce((sum, o) => sum + (Number(o.total_price) || 0), 0);
+
+  const pieChartsData = [
+    {
+      title: 'Total Order',
+      value: totalOrderCount > 0 ? Math.round((deliveredConfirmedCount / totalOrderCount) * 100) : 0,
+      color: '#F44336',
+    },
+    {
+      title: 'Customer Growth',
+      value: uniqueCustomers,
+      color: '#4CAF50',
+    },
+    {
+      title: 'Total Revenue',
+      value: totalRevenue,
+      color: '#2196F3',
+    },
+  ];
+
+  // Line chart: order per hari (7 hari terakhir)
+  const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  const orderPerDay = Array(7).fill(0);
+  orders.forEach(o => {
+    const d = new Date(o.created_at);
+    orderPerDay[d.getDay()]++;
+  });
+  const orderLineChart = {
+    series: [
+      {
+        name: 'Order',
+        data: orderPerDay,
+      },
+    ],
+    options: {
+      chart: { id: 'order-line', toolbar: { show: false } },
+      xaxis: { categories: days },
+      stroke: { curve: 'smooth', width: 3 },
+      colors: ['#2196F3'],
+      dataLabels: { enabled: false },
+      grid: { show: false },
+    },
+  };
+
+  // Bar chart: customer per hari (7 hari terakhir)
+  const customerPerDay = Array(7).fill(0);
+  const customerSetPerDay = Array(7).fill(null).map(() => new Set());
+  orders.forEach(o => {
+    const d = new Date(o.created_at);
+    customerSetPerDay[d.getDay()].add(o.customer?.fullname || o.customer_id);
+  });
+  for (let i = 0; i < 7; i++) {
+    customerPerDay[i] = customerSetPerDay[i].size;
+  }
+  const customerBarChart = {
+    series: [
+      {
+        name: 'Customer',
+        data: customerPerDay,
+      },
+    ],
+    options: {
+      chart: { id: 'customer-bar', toolbar: { show: false } },
+      xaxis: { categories: days },
+      plotOptions: { bar: { horizontal: false, columnWidth: '40%' } },
+      colors: ['#FFD600'],
+      dataLabels: { enabled: false },
+      grid: { show: false },
+      legend: { show: true, position: 'top' },
+    },
+  };
+
+  // Area chart: total revenue per bulan (tahun berjalan)
+  const now = new Date();
+  const year = now.getFullYear();
+  const revenuePerMonth = Array(12).fill(0);
+  orders.forEach(o => {
+    const d = new Date(o.created_at);
+    if (["delivered", "confirmed"].includes(o.status) && d.getFullYear() === year) {
+      revenuePerMonth[d.getMonth()] += Number(o.total_price) || 0;
+    }
+  });
+  const totalRevenueAreaChart = {
+    series: [
+      {
+        name: String(year),
+        data: revenuePerMonth,
+      },
+    ],
+    options: {
+      chart: { id: 'total-revenue-area', toolbar: { show: false } },
+      xaxis: { categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] },
+      stroke: { curve: 'smooth', width: 3 },
+      colors: ['#2196F3'],
+      dataLabels: { enabled: false },
+      grid: { show: false },
+      legend: { show: true, position: 'top' },
+    },
+  };
+
   return (
     <div className="mt-12">
       <div className="mb-12 grid gap-y-10 gap-x-6 md:grid-cols-2 xl:grid-cols-4">
@@ -46,8 +218,7 @@ export function Home() {
             })}
             footer={
               <Typography className="font-normal text-blue-gray-600">
-                <strong className={footer.color}>{footer.value}</strong>
-                &nbsp;{footer.label}
+                <strong className={footer.color}>{footer.value}</strong>&nbsp;{footer.label}
               </Typography>
             }
           />
@@ -65,9 +236,16 @@ export function Home() {
               options={{
                 labels: [pie.title, "Other"],
                 colors: [pie.color, "#F3F6F9"],
-                dataLabels: { enabled: true, formatter: (val) => `${Math.round(val)}%` },
-                legend: { show: false },
-                stroke: { width: 0 },
+                dataLabels: {
+                  enabled: true,
+                  formatter: (val) => `${Math.round(val)}%`
+                },
+                legend: {
+                  show: false
+                },
+                stroke: {
+                  width: 0
+                },
               }}
               height={160}
             />
@@ -114,192 +292,6 @@ export function Home() {
           </CardHeader>
           <CardBody className="pt-0">
             <AreaChart {...totalRevenueAreaChart} height={260} />
-          </CardBody>
-        </Card>
-      </div>
-      <div className="mb-4 grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <Card className="overflow-hidden xl:col-span-2 border border-blue-gray-100 shadow-sm">
-          <CardHeader
-            floated={false}
-            shadow={false}
-            color="transparent"
-            className="m-0 flex items-center justify-between p-6"
-          >
-            <div>
-              <Typography variant="h6" color="blue-gray" className="mb-1">
-                Projects
-              </Typography>
-              <Typography
-                variant="small"
-                className="flex items-center gap-1 font-normal text-blue-gray-600"
-              >
-                <CheckCircleIcon strokeWidth={3} className="h-4 w-4 text-blue-gray-200" />
-                <strong>30 done</strong> this month
-              </Typography>
-            </div>
-            <Menu placement="left-start">
-              <MenuHandler>
-                <IconButton size="sm" variant="text" color="blue-gray">
-                  <EllipsisVerticalIcon
-                    strokeWidth={3}
-                    fill="currenColor"
-                    className="h-6 w-6"
-                  />
-                </IconButton>
-              </MenuHandler>
-              <MenuList>
-                <MenuItem>Action</MenuItem>
-                <MenuItem>Another Action</MenuItem>
-                <MenuItem>Something else here</MenuItem>
-              </MenuList>
-            </Menu>
-          </CardHeader>
-          <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
-            <table className="w-full min-w-[640px] table-auto">
-              <thead>
-                <tr>
-                  {["companies", "members", "budget", "completion"].map(
-                    (el) => (
-                      <th
-                        key={el}
-                        className="border-b border-blue-gray-50 py-3 px-6 text-left"
-                      >
-                        <Typography
-                          variant="small"
-                          className="text-[11px] font-medium uppercase text-blue-gray-400"
-                        >
-                          {el}
-                        </Typography>
-                      </th>
-                    )
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {projectsTableData.map(
-                  ({ img, name, members, budget, completion }, key) => {
-                    const className = `py-3 px-5 ${
-                      key === projectsTableData.length - 1
-                        ? ""
-                        : "border-b border-blue-gray-50"
-                    }`;
-
-                    return (
-                      <tr key={name}>
-                        <td className={className}>
-                          <div className="flex items-center gap-4">
-                            <Avatar src={img} alt={name} size="sm" />
-                            <Typography
-                              variant="small"
-                              color="blue-gray"
-                              className="font-bold"
-                            >
-                              {name}
-                            </Typography>
-                          </div>
-                        </td>
-                        <td className={className}>
-                          {members.map(({ img, name }, key) => (
-                            <Tooltip key={name} content={name}>
-                              <Avatar
-                                src={img}
-                                alt={name}
-                                size="xs"
-                                variant="circular"
-                                className={`cursor-pointer border-2 border-white ${
-                                  key === 0 ? "" : "-ml-2.5"
-                                }`}
-                              />
-                            </Tooltip>
-                          ))}
-                        </td>
-                        <td className={className}>
-                          <Typography
-                            variant="small"
-                            className="text-xs font-medium text-blue-gray-600"
-                          >
-                            {budget}
-                          </Typography>
-                        </td>
-                        <td className={className}>
-                          <div className="w-10/12">
-                            <Typography
-                              variant="small"
-                              className="mb-1 block text-xs font-medium text-blue-gray-600"
-                            >
-                              {completion}%
-                            </Typography>
-                            <Progress
-                              value={completion}
-                              variant="gradient"
-                              color={completion === 100 ? "green" : "blue"}
-                              className="h-1"
-                            />
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  }
-                )}
-              </tbody>
-            </table>
-          </CardBody>
-        </Card>
-        <Card className="border border-blue-gray-100 shadow-sm">
-          <CardHeader
-            floated={false}
-            shadow={false}
-            color="transparent"
-            className="m-0 p-6"
-          >
-            <Typography variant="h6" color="blue-gray" className="mb-2">
-              Orders Overview
-            </Typography>
-            <Typography
-              variant="small"
-              className="flex items-center gap-1 font-normal text-blue-gray-600"
-            >
-              <ArrowUpIcon
-                strokeWidth={3}
-                className="h-3.5 w-3.5 text-green-500"
-              />
-              <strong>24%</strong> this month
-            </Typography>
-          </CardHeader>
-          <CardBody className="pt-0">
-            {ordersOverviewData.map(
-              ({ icon, color, title, description }, key) => (
-                <div key={title} className="flex items-start gap-4 py-3">
-                  <div
-                    className={`relative p-1 after:absolute after:-bottom-6 after:left-2/4 after:w-0.5 after:-translate-x-2/4 after:bg-blue-gray-50 after:content-[''] ${
-                      key === ordersOverviewData.length - 1
-                        ? "after:h-0"
-                        : "after:h-4/6"
-                    }`}
-                  >
-                    {React.createElement(icon, {
-                      className: `!w-5 !h-5 ${color}`,
-                    })}
-                  </div>
-                  <div>
-                    <Typography
-                      variant="small"
-                      color="blue-gray"
-                      className="block font-medium"
-                    >
-                      {title}
-                    </Typography>
-                    <Typography
-                      as="span"
-                      variant="small"
-                      className="text-xs font-medium text-blue-gray-500"
-                    >
-                      {description}
-                    </Typography>
-                  </div>
-                </div>
-              )
-            )}
           </CardBody>
         </Card>
       </div>

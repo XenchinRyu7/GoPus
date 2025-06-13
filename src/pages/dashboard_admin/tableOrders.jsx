@@ -33,9 +33,12 @@ import {
   Search,
   Bin,
 } from "iconoir-react";
-import { faker } from "@faker-js/faker";
 import { twMerge } from "tailwind-merge";
 import { rankItem } from "@tanstack/match-sorter-utils";
+import { getOrdersByPlace, updateOrderStatus } from "@/api/order";
+import { useAuthContext } from "@/context/AuthContext";
+import AdminOrderDialog from "./components/OrderDialog";
+import DeleteOrderDialog from "./components/DeleteOrderDialog";
 
 const fuzzyFilter = (row, columnId, value, addMeta) => {
   const itemRank = rankItem(row.getValue(columnId), value);
@@ -51,61 +54,78 @@ function range(len) {
   return arr;
 }
 
-function newOrder() {
-  return {
-    name: faker.person.fullName(),
-    food: faker.commerce.productName(),
-    price: faker.number.int({ min: 10000, max: 200000 }),
-    date: faker.date.recent({ days: 30 }).toLocaleDateString("id-ID"),
-    status: faker.helpers.arrayElement(["Paid", "Refunded", "Failed"]),
-  };
-}
-
-function makeData(len) {
-  return range(len).map(() => newOrder());
-}
+const placeIdByAdmin = {
+  "admin@siliwangi.com": 1,
+  "admin@langlangbuana.com": 2,
+  "admin@tamankota.com": 3,
+};
 
 const TableOrders = () => {
+  const { user } = useAuthContext();
+  const [data, setData] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [showOrderDialog, setShowOrderDialog] = React.useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
+  const [selectedOrder, setSelectedOrder] = React.useState(null);
   const columns = React.useMemo(
     () => [
       {
-        header: "Nama",
-        accessorKey: "name",
-        cell: (info) => info.getValue(),
+        header: "Nama Pemesan",
+        accessorKey: "customer.fullname",
+        cell: (info) => info.row.original.customer?.fullname || "-",
       },
       {
-        header: "Makanan Pesanan",
-        accessorKey: "food",
-        cell: (info) => info.getValue(),
+        header: "Merchant",
+        accessorKey: "merchant.name",
+        cell: (info) => info.row.original.merchant?.name || "-",
+      },
+      {
+        header: "Alamat Pengiriman",
+        accessorKey: "delivery_address",
+        cell: (info) => info.row.original.delivery_address,
       },
       {
         header: "Harga",
-        accessorKey: "price",
+        accessorKey: "total_price",
         cell: (info) =>
           Intl.NumberFormat("id-ID", {
             style: "currency",
             currency: "IDR",
             minimumFractionDigits: 0,
-          }).format(Number(info.getValue())),
+          }).format(Number(info.row.original.total_price)),
       },
       {
-        header: "Tanggal",
-        accessorKey: "date",
-        cell: (info) => info.getValue(),
+        header: "Delivery Fee",
+        accessorKey: "delivery_fee",
+        cell: (info) =>
+          Intl.NumberFormat("id-ID", {
+            style: "currency",
+            currency: "IDR",
+            minimumFractionDigits: 0,
+          }).format(Number(info.row.original.delivery_fee)),
       },
       {
         header: "Status",
         accessorKey: "status",
         cell: (info) => {
-          const status = info.getValue();
+          const status = info.row.original.status;
           let badgeClass = "";
           let text = status;
-          if (status === "Paid") {
-            badgeClass = "bg-[#00B07426] text-[#00B074] border border-[#00B07426]";
-          } else if (status === "Refunded") {
-            badgeClass = "bg-blue-gray-50 text-blue-gray-700 border border-blue-gray-200";
-          } else if (status === "Failed") {
+          if (status === "pending") {
+            badgeClass = "bg-yellow-50 text-yellow-700 border border-yellow-200";
+            text = "Pending";
+          } else if (status === "confirmed") {
+            badgeClass = "bg-blue-50 text-blue-700 border border-blue-200";
+            text = "Confirmed";
+          } else if (status === "on_delivery") {
+            badgeClass = "bg-purple-50 text-purple-700 border border-purple-200";
+            text = "On Delivery";
+          } else if (status === "delivered") {
+            badgeClass = "bg-green-50 text-green-700 border border-green-200";
+            text = "Delivered";
+          } else if (status === "cancelled") {
             badgeClass = "bg-red-50 text-red-700 border border-red-200";
+            text = "Cancelled";
           } else {
             badgeClass = "bg-blue-gray-50 text-blue-gray-700 border border-blue-gray-200";
           }
@@ -113,6 +133,11 @@ const TableOrders = () => {
             <span className={`px-3 py-1 rounded-lg text-xs font-semibold inline-block ${badgeClass}`}>{text}</span>
           );
         },
+      },
+      {
+        header: "Tanggal",
+        accessorKey: "created_at",
+        cell: (info) => new Date(info.row.original.created_at).toLocaleString("id-ID"),
       },
       {
         header: "",
@@ -126,13 +151,10 @@ const TableOrders = () => {
                 </IconButton>
               </MenuHandler>
               <MenuList>
-                <MenuItem className="flex items-center gap-2">
-                  <EyeSolid className="h-4 w-4 stroke-2" /> View
+                <MenuItem className="flex items-center gap-2" onClick={() => { setSelectedOrder(info.row.original); setShowOrderDialog(true); }}>
+                  <EyeSolid className="h-4 w-4 stroke-2" /> View / Edit
                 </MenuItem>
-                <MenuItem className="flex items-center gap-2">
-                  <EditPencil className="h-4 w-4 stroke-2" /> Edit
-                </MenuItem>
-                <MenuItem className="flex items-center gap-2 text-red-500">
+                <MenuItem className="flex items-center gap-2 text-red-500" onClick={() => { setSelectedOrder(info.row.original); setShowDeleteDialog(true); }}>
                   <Bin className="h-4 w-4 stroke-2" /> Delete
                 </MenuItem>
               </MenuList>
@@ -144,7 +166,6 @@ const TableOrders = () => {
     []
   );
 
-  const [data, setData] = React.useState(() => makeData(50));
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
@@ -178,6 +199,23 @@ const TableOrders = () => {
 
   const pageCount = Math.ceil(data.length / pagination.pageSize);
   const pageNumbers = Array.from({ length: Math.min(5, pageCount) }, (_, i) => i);
+
+  React.useEffect(() => {
+    async function fetchOrders() {
+      setLoading(true);
+      try {
+        const place_id = placeIdByAdmin[user?.email];
+        if (!place_id) return setData([]);
+        const res = await getOrdersByPlace(place_id);
+        setData(res.data || res);
+      } catch {
+        setData([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchOrders();
+  }, [user]);
 
   return (
     <Card className="h-full w-full p-4">
@@ -330,6 +368,39 @@ const TableOrders = () => {
           </div>
         </div>
       </CardBody>
+      <AdminOrderDialog
+        open={showOrderDialog}
+        onClose={() => setShowOrderDialog(false)}
+        order={selectedOrder}
+        onSaveStatus={async (newStatus) => {
+          if (!selectedOrder) return;
+          await updateOrderStatus(selectedOrder.id, newStatus);
+          setShowOrderDialog(false);
+          // Refresh data
+          const place_id = placeIdByAdmin[user?.email];
+          if (place_id) {
+            const res = await getOrdersByPlace(place_id);
+            setData(res.data || res);
+          }
+        }}
+      />
+      <DeleteOrderDialog
+        open={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        order={selectedOrder}
+        onDelete={async () => {
+          if (!selectedOrder) return;
+          // Soft delete: update status ke cancelled
+          await updateOrderStatus(selectedOrder.id, "cancelled");
+          setShowDeleteDialog(false);
+          // Refresh data
+          const place_id = placeIdByAdmin[user?.email];
+          if (place_id) {
+            const res = await getOrdersByPlace(place_id);
+            setData(res.data || res);
+          }
+        }}
+      />
     </Card>
   );
 };

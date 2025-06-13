@@ -27,12 +27,37 @@ import {
   setOpenConfigurator,
   setOpenSidenav,
 } from "@/context";
+import { useAuthContext } from "@/context/AuthContext";
+import { getOrdersByPlace } from "@/api/order";
 
 export function DashboardNavbar() {
   const [controller, dispatch] = useMaterialTailwindController();
   const { fixedNavbar, openSidenav } = controller;
   const { pathname } = useLocation();
   const [layout, page] = pathname.split("/").filter((el) => el !== "");
+  const { user } = useAuthContext();
+  const [pendingOrders, setPendingOrders] = useState([]);
+
+  useEffect(() => {
+    async function fetchPendingOrders() {
+      if (!user?.email) return setPendingOrders([]);
+      const placeIdByAdmin = {
+        "admin@siliwangi.com": 1,
+        "admin@langlangbuana.com": 2,
+        "admin@tamankota.com": 3,
+      };
+      const place_id = placeIdByAdmin[user.email];
+      if (!place_id) return setPendingOrders([]);
+      try {
+        const res = await getOrdersByPlace(place_id);
+        const orders = res.data || res;
+        setPendingOrders(orders.filter((o) => o.status === "pending"));
+      } catch {
+        setPendingOrders([]);
+      }
+    }
+    fetchPendingOrders();
+  }, [user]);
 
   return (
     <Navbar
@@ -99,75 +124,31 @@ export function DashboardNavbar() {
               </IconButton>
             </MenuHandler>
             <MenuList className="w-max border-0">
-              <MenuItem className="flex items-center gap-3">
-                <Avatar
-                  src="https://demos.creative-tim.com/material-dashboard/assets/img/team-2.jpg"
-                  alt="item-1"
-                  size="sm"
-                  variant="circular"
-                />
-                <div>
-                  <Typography
-                    variant="small"
-                    color="blue-gray"
-                    className="mb-1 font-normal"
-                  >
-                    <strong>New message</strong> from Laur
+              {pendingOrders.length === 0 && (
+                <MenuItem className="flex items-center gap-3">
+                  <Typography variant="small" color="blue-gray" className="mb-1 font-normal">
+                    Tidak ada order pending
                   </Typography>
-                  <Typography
-                    variant="small"
-                    color="blue-gray"
-                    className="flex items-center gap-1 text-xs font-normal opacity-60"
-                  >
-                    <ClockIcon className="h-3.5 w-3.5" /> 13 minutes ago
-                  </Typography>
-                </div>
-              </MenuItem>
-              <MenuItem className="flex items-center gap-4">
-                <Avatar
-                  src="https://demos.creative-tim.com/material-dashboard/assets/img/small-logos/logo-spotify.svg"
-                  alt="item-1"
-                  size="sm"
-                  variant="circular"
-                />
-                <div>
-                  <Typography
-                    variant="small"
-                    color="blue-gray"
-                    className="mb-1 font-normal"
-                  >
-                    <strong>New album</strong> by Travis Scott
-                  </Typography>
-                  <Typography
-                    variant="small"
-                    color="blue-gray"
-                    className="flex items-center gap-1 text-xs font-normal opacity-60"
-                  >
-                    <ClockIcon className="h-3.5 w-3.5" /> 1 day ago
-                  </Typography>
-                </div>
-              </MenuItem>
-              <MenuItem className="flex items-center gap-4">
-                <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-tr from-blue-gray-800 to-blue-gray-900">
-                  <CreditCardIcon className="h-4 w-4 text-white" />
-                </div>
-                <div>
-                  <Typography
-                    variant="small"
-                    color="blue-gray"
-                    className="mb-1 font-normal"
-                  >
-                    Payment successfully completed
-                  </Typography>
-                  <Typography
-                    variant="small"
-                    color="blue-gray"
-                    className="flex items-center gap-1 text-xs font-normal opacity-60"
-                  >
-                    <ClockIcon className="h-3.5 w-3.5" /> 2 days ago
-                  </Typography>
-                </div>
-              </MenuItem>
+                </MenuItem>
+              )}
+              {pendingOrders.map((order, idx) => (
+                <MenuItem key={order.id || idx} className="flex items-center gap-3">
+                  <Avatar
+                    src={order.customer?.image ? `http://localhost:3000/uploads/${order.customer.image}` : "/img/placeholder.png"}
+                    alt={order.customer?.fullname || "customer"}
+                    size="sm"
+                    variant="circular"
+                  />
+                  <div>
+                    <Typography variant="small" color="blue-gray" className="mb-1 font-normal">
+                      <strong>Order Pending</strong> dari {order.customer?.fullname || order.customer_id}
+                    </Typography>
+                    <Typography variant="small" color="blue-gray" className="flex items-center gap-1 text-xs font-normal opacity-60">
+                      <ClockIcon className="h-3.5 w-3.5" /> {new Date(order.created_at).toLocaleString("id-ID")}
+                    </Typography>
+                  </div>
+                </MenuItem>
+              ))}
             </MenuList>
           </Menu>
           <IconButton
@@ -204,7 +185,6 @@ function UserMenu() {
   if (!user) return null;
 
   const displayName = user.fullname || user.email?.split("@")[0] || "User";
-  const avatarSrc = user.image || "/img/team-2.jpeg";
 
   return (
     <Menu open={open} handler={setOpen} placement="bottom-end">
@@ -212,7 +192,7 @@ function UserMenu() {
         <div className="flex items-center gap-2 cursor-pointer select-none">
           <span className="font-semibold text-blue-gray-700">Hello, {displayName}</span>
           <Avatar
-            src={avatarSrc}
+             src={user?.image ? `http://localhost:3000/uploads/${user.image}` : "/img/placeholder.png"}
             alt="user"
             size="sm"
             variant="circular"

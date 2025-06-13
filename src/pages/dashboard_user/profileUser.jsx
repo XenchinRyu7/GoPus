@@ -21,8 +21,10 @@ import {
 import { Link } from "react-router-dom";
 import { ProfileInfoCard, MessageCard } from "@/widgets/cards";
 import { platformSettingsData, conversationsData, projectsData } from "@/data";
+import { getUserData } from "@/utils/auth";
 
 export function ProfileUser() {
+  const user = getUserData();
   return (
     <>
       <Card className="mx-3 mb-6 mt-5 lg:mx-4 border border-blue-gray-100">
@@ -30,21 +32,21 @@ export function ProfileUser() {
           <div className="mb-10 flex items-center justify-between flex-wrap gap-6">
             <div className="flex items-center gap-6">
               <Avatar
-                src="/img/bruce-mars.jpeg"
-                alt="bruce-mars"
+                src={user?.image ? `http://localhost:3000/uploads/${user.image}` : "/img/placeholder.png"}
+                alt={user?.fullname || "User"}
                 size="xl"
                 variant="rounded"
                 className="rounded-lg shadow-lg shadow-blue-gray-500/40"
               />
               <div>
                 <Typography variant="h5" color="blue-gray" className="mb-1">
-                  Richard Davis
+                  {user?.fullname || "-"}
                 </Typography>
                 <Typography
                   variant="small"
                   className="font-normal text-blue-gray-600"
                 >
-                  CEO / Co-Founder
+                  {user?.role === "admin" ? "Admin" : "Customer"}
                 </Typography>
               </div>
             </div>
@@ -52,19 +54,15 @@ export function ProfileUser() {
           <div className="w-full">
             <ProfileInfoCard
               title="Profile Information"
-              description="Hi, I'm Alec Thompson, Decisions: If you can't decide, the answer is no. If two equally difficult paths, choose the one more painful in the short term (pain avoidance is creating an illusion of equality)."
+              description={user?.bio || "-"}
               details={{
-                "first name": "Alec M. Thompson",
-                mobile: "(44) 123 1234 123",
-                email: "alecthompson@mail.com",
-                location: "USA",
-                social: (
-                  <div className="flex items-center gap-4">
-                    <i className="fa-brands fa-facebook text-blue-700" />
-                    <i className="fa-brands fa-twitter text-blue-400" />
-                    <i className="fa-brands fa-instagram text-purple-500" />
-                  </div>
-                ),
+                "Full Name": user?.fullname || "-",
+                Email: user?.email || "-",
+                Phone: user?.phone || "-",
+                Address: user?.address || "-",
+                Status: user?.status || "-",
+                "Created At": user?.created_at ? new Date(user.created_at).toLocaleString("id-ID") : "-",
+                "Updated At": user?.updated_at ? new Date(user.updated_at).toLocaleString("id-ID") : "-",
               }}
               action={
                 <Tooltip content="Edit Profile">

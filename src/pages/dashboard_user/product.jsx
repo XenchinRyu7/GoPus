@@ -84,25 +84,6 @@ export function Product ()  {
     return pageNumbers;
   };
 
-  function getSafeImage(img) {
-    if (!img) return undefined;
-    if (img.includes("drive.google.com/open?id=")) {
-      const id = img.split("id=")[1];
-      return `https://drive.google.com/uc?export=view&id=${id}`;
-    }
-    if (img.includes("drive.google.com/file/d/")) {
-      const match = img.match(/\/d\/([\w-]+)/);
-      if (match && match[1]) {
-        return `https://drive.google.com/uc?export=view&id=${match[1]}`;
-      }
-    }
-    // Jika image bukan link valid, fallback ke default
-    if (img.startsWith("/img/")) {
-      return img;
-    }
-    return undefined;
-  }
-
   return (
     <div className="container mx-auto px-4 py-8">
       {loading ? (
@@ -114,12 +95,20 @@ export function Product ()  {
               <PuspaCard
                 key={product.id}
                 name={product.name}
-                image={getSafeImage(product.image) || getSafeImage(product.merchant?.image) || `/img/default.jpg`}
+                image={product.image ? `http://localhost:3000/uploads/${product.image}` : "/img/default.jpg"}
                 title={product.name}
                 description={product.description}
                 rating={product.rating}
-                seller={product.merchant?.name || product.seller}
-                location={product.location}
+                seller={product.merchant?.name}
+                location={(() => {
+                  const place = Object.entries(placeIdByPath).find(([, id]) => id === product.merchant?.place_id);
+                  if (place) {
+                    if (place[1] === 3) return "Puspa Taman Kota";
+                    if (place[1] === 1) return "Puspa Siliwangi";
+                    if (place[1] === 2) return "Puspa Langlangbuana";
+                  }
+                  return product.location;
+                })()}
                 category={product.category}
                 onClick={() => navigate(`/dashboard/product/${product.id}`)}
               />
