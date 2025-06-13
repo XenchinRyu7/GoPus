@@ -1,7 +1,8 @@
 import { UserIcon, HomeIcon, Bars4Icon } from "@heroicons/react/24/outline";
-import { Home, Profile, Tables, Notifications, TableUsers, TableSellers, TableOrders } from "@/pages/dashboard_admin";
+import { Home, Profile, Tables, Notifications, TableUsers, TableSellers, TableOrders, TableProducts } from "@/pages/dashboard_admin";
 import { HomeUser, Product, HistoryPayment, Orders, ProfileUser } from "@/pages/dashboard_user";
 import { SignIn, SignUp } from "@/pages/auth";
+import { ProductDetail } from "@/pages/dashboard_user/productDetail";
 
 const icon = {
   className: "w-5 h-5 text-inherit",
@@ -38,6 +39,13 @@ export const routes = [
         name: "Users",
         path: "/users",
         element: <TableUsers />, 
+        role: "admin",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Products",
+        path: "/products",
+        element: <TableProducts />,
         role: "admin",
       },
       // USER ROUTES
@@ -88,6 +96,12 @@ export const routes = [
         name: "Profile",
         path: "/profile",
         element: <ProfileUser />,
+        role: "customer",
+      },
+      {
+        name: "Product Detail",
+        path: "/product/:id",
+        element: <ProductDetail />, // detail produk
         role: "customer",
       },
     ],

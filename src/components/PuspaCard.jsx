@@ -2,9 +2,12 @@ import React from "react";
 import { Card, Typography, Avatar } from "@material-tailwind/react";
 import { StarIcon } from "@heroicons/react/24/solid";
 
-export function PuspaCard({ name, seller, location, category, image, rating }) {
+export function PuspaCard({ name, seller, location, category, image, rating, onClick }) {
   return (
-    <Card className="w-64 min-w-[256px] bg-white rounded-xl shadow-md overflow-hidden p-0 flex flex-col">
+    <Card
+      className="w-64 min-w-[256px] bg-white rounded-xl shadow-md overflow-hidden p-0 flex flex-col cursor-pointer hover:shadow-lg transition"
+      onClick={onClick}
+    >
       <div className="w-full aspect-[4/3] bg-gray-100">
         <img
           src={image}

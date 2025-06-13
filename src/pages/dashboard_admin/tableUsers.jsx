@@ -32,10 +32,13 @@ import {
   NavArrowUp,
   Search,
   Bin,
+  
 } from "iconoir-react";
 import { faker } from "@faker-js/faker";
 import { twMerge } from "tailwind-merge";
 import { rankItem } from "@tanstack/match-sorter-utils";
+import { getUsers } from "@/api/user";
+import { getToken } from "@/utils/auth";
 
 const fuzzyFilter = (row, columnId, value, addMeta) => {
   const itemRank = rankItem(row.getValue(columnId), value);
@@ -68,54 +71,13 @@ function makeData(len) {
 const TableUsers = () => {
   const columns = React.useMemo(
     () => [
+      { header: "Nama", accessorKey: "fullname", cell: (info) => info.getValue() },
+      { header: "Email", accessorKey: "email", cell: (info) => info.getValue() },
+      { header: "No. Telp", accessorKey: "phone", cell: (info) => info.getValue() || "-" },
+      { header: "Alamat", accessorKey: "address", cell: (info) => info.getValue() || "-" },
+      { header: "Status", accessorKey: "status", cell: (info) => info.getValue() },
       {
-        header: "Nama",
-        accessorKey: "name",
-        cell: (info) => info.getValue(),
-      },
-      {
-        header: "Makanan Pesanan",
-        accessorKey: "food",
-        cell: (info) => info.getValue(),
-      },
-      {
-        header: "Harga",
-        accessorKey: "price",
-        cell: (info) =>
-          Intl.NumberFormat("id-ID", {
-            style: "currency",
-            currency: "IDR",
-            minimumFractionDigits: 0,
-          }).format(Number(info.getValue())),
-      },
-      {
-        header: "Tanggal",
-        accessorKey: "date",
-        cell: (info) => info.getValue(),
-      },
-      {
-        header: "Status",
-        accessorKey: "status",
-        cell: (info) => {
-          const status = info.getValue();
-          let badgeClass = "";
-          let text = status;
-          if (status === "Paid") {
-            badgeClass = "bg-[#00B07426] text-[#00B074] border border-[#00B07426]";
-          } else if (status === "Refunded") {
-            badgeClass = "bg-blue-gray-50 text-blue-gray-700 border border-blue-gray-200";
-          } else if (status === "Failed") {
-            badgeClass = "bg-red-50 text-red-700 border border-red-200";
-          } else {
-            badgeClass = "bg-blue-gray-50 text-blue-gray-700 border border-blue-gray-200";
-          }
-          return (
-            <span className={`px-3 py-1 rounded-lg text-xs font-semibold inline-block ${badgeClass}`}>{text}</span>
-          );
-        },
-      },
-      {
-        header: "",
+        header: "Aksi",
         accessorKey: "action",
         cell: (info) => (
           <div className="w-full text-end">
@@ -144,12 +106,32 @@ const TableUsers = () => {
     []
   );
 
-  const [data, setData] = React.useState(() => makeData(50));
+  const [data, setData] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
     pageSize: 10,
   });
+
+  React.useEffect(() => {
+    async function fetchUsers() {
+      setLoading(true);
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await getUsers(token);
+        let users = res.data || res;
+        users = users.filter((u) => u.role === "customer");
+        setData(users);
+      } catch (e) {
+        setData([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchUsers();
+  }, []);
 
   const table = useReactTable({
     data,

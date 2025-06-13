@@ -36,7 +36,7 @@ import {
 import { faker } from "@faker-js/faker";
 import { twMerge } from "tailwind-merge";
 import { rankItem } from "@tanstack/match-sorter-utils";
-import { getSellers } from "@/api/seller";
+import { getProducts } from "@/api/product";
 import { getToken, getUserData } from "@/utils/auth";
 
 const fuzzyFilter = (row, columnId, value, addMeta) => {
@@ -73,28 +73,36 @@ const placeIdByAdmin = {
   "admin@tamankota.com": 3,
 };
 
-const TableSellers = () => {
+const TableProducts = () => {
   const columns = React.useMemo(
     () => [
       {
-        header: "Nama Merchant",
+        header: "Nama Produk",
         accessorKey: "name",
-        cell: (info) => info.getValue(),
+        cell: (info) => (
+          <span className="block max-w-[140px] truncate text-xs font-medium text-blue-gray-800">
+            {info.getValue()}
+          </span>
+        ),
       },
       {
-        header: "Nama Pemilik",
-        accessorKey: "owner_name",
-        cell: (info) => info.getValue(),
+        header: "Deskripsi",
+        accessorKey: "description",
+        cell: (info) => (
+          <span className="block max-w-[200px] truncate text-xs text-blue-gray-600">
+            {info.getValue() || "-"}
+          </span>
+        ),
       },
       {
-        header: "No. Telp",
-        accessorKey: "phone",
-        cell: (info) => info.getValue() || "-",
-      },
-      {
-        header: "Alamat",
-        accessorKey: "address",
-        cell: (info) => info.getValue() || "-",
+        header: "Harga",
+        accessorKey: "price",
+        cell: (info) =>
+          Intl.NumberFormat("id-ID", {
+            style: "currency",
+            currency: "IDR",
+            minimumFractionDigits: 0,
+          }).format(Number(info.getValue())),
       },
       {
         header: "Status",
@@ -102,25 +110,14 @@ const TableSellers = () => {
         cell: (info) => info.getValue(),
       },
       {
-        header: "Jam Buka",
-        accessorKey: "open_time",
+        header: "Tipe",
+        accessorKey: "type",
         cell: (info) => info.getValue(),
       },
       {
-        header: "Jam Tutup",
-        accessorKey: "close_time",
-        cell: (info) => info.getValue(),
-      },
-      {
-        header: "Place",
-        accessorKey: "place_id",
-        cell: (info) => {
-          const val = info.getValue();
-          if (val === 1) return "Puspa Siliwangi";
-          if (val === 2) return "Puspa Langlangbuana";
-          if (val === 3) return "Puspa Taman Kota";
-          return val;
-        },
+        header: "Merchant",
+        accessorKey: "merchant.name",
+        cell: (info) => info.row.original.merchant?.name || "-",
       },
       {
         header: "Aksi",
@@ -161,27 +158,27 @@ const TableSellers = () => {
   });
 
   React.useEffect(() => {
-    async function fetchSellers() {
+    async function fetchProducts() {
       setLoading(true);
       try {
         const token = getToken();
         const user = getUserData();
         if (!token || !user) return;
-        const res = await getSellers(token);
-        let sellers = res.data || res; // tergantung response API
+        const res = await getProducts(token);
+        let products = res.data || res;
         const adminEmail = user.email;
         const placeId = placeIdByAdmin[adminEmail];
         if (placeId) {
-          sellers = sellers.filter((s) => s.place_id === placeId);
+          products = products.filter((p) => p.merchant && p.merchant.place_id === placeId);
         }
-        setData(sellers);
+        setData(products);
       } catch (e) {
         setData([]);
       } finally {
         setLoading(false);
       }
     }
-    fetchSellers();
+    fetchProducts();
   }, []);
 
   const table = useReactTable({
@@ -222,7 +219,7 @@ const TableSellers = () => {
 
   return (
     <Card className="h-full w-full p-4">
-      <CardBody className="overflow-auto px-0">
+      <CardBody className="overflow-x-auto px-0">
         <div className="mb-4 flex justify-between gap-4">
           <div className="w-60 relative">
             <Input
@@ -375,4 +372,4 @@ const TableSellers = () => {
   );
 };
 
-export default TableSellers;
+export default TableProducts;

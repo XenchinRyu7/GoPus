@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Typography,
   Card,
@@ -33,15 +33,60 @@ import {
 import { CheckCircleIcon, ClockIcon } from "@heroicons/react/24/solid";
 import banner from "@/../public/img/banner.svg";
 import { PuspaCard } from "@/components/PuspaCard";
-import { faker } from "@faker-js/faker";
+import { getProducts } from "@/api/product";
+import { getToken } from "@/utils/auth";
+
+const placeNames = {
+  3: "Puspa Taman Kota",
+  1: "Siliwangi",
+  2: "Langlangbuana",
+};
+
+function getSafeImage(img) {
+  if (!img) return undefined;
+  if (img.includes("drive.google.com/open?id=")) {
+    const id = img.split("id=")[1];
+    return `https://drive.google.com/uc?export=view&id=${id}`;
+  }
+  if (img.includes("drive.google.com/file/d/")) {
+    const match = img.match(/\/d\/([\w-]+)/);
+    if (match && match[1]) {
+      return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+    }
+  }
+  if (img.startsWith("/img/")) {
+    return img;
+  }
+  return undefined;
+}
 
 export function Home() {
-  // Generate dummy data makanan
-  const makananList = Array.from({ length: 6 }).map(() => ({
-    name: faker.commerce.productName(),
-    description: faker.lorem.sentence(),
-    image: faker.image.food(200, 200, true),
-  }));
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchProducts() {
+      setLoading(true);
+      try {
+        const token = getToken();
+        const res = await getProducts(token);
+        setProducts(res.data || res);
+      } catch {
+        setProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchProducts();
+  }, []);
+
+  // Group products by place_id
+  const grouped = { 3: [], 1: [], 2: [] };
+  products.forEach((p) => {
+    if (p.merchant && grouped[p.merchant.place_id]) {
+      grouped[p.merchant.place_id].push(p);
+    }
+  });
 
   return (
     <div className="mt-6">
@@ -49,12 +94,36 @@ export function Home() {
       <div className="w-full flex justify-center mb-8">
         <img src={banner} alt="Banner" className="rounded-xl w-full max-h-56 object-cover" />
       </div>
-      {/* Puspa Cards */}
-      <div className="mb-10 grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-        {makananList.map((item, idx) => (
-          <PuspaCard key={idx} name={item.name} description={item.description} image={item.image} />
-        ))}
-      </div>
+      {/* Product Groups by Place */}
+      {loading ? (
+        <div className="text-center py-10 text-blue-gray-500">Loading products...</div>
+      ) : (
+        Object.entries(grouped).map(([placeId, list]) =>
+          list.length > 0 ? (
+            <div key={placeId} className="mb-10">
+              <Typography variant="h5" className="mb-4 font-bold text-blue-gray-700">
+                {placeNames[placeId]}
+              </Typography>
+              <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+                {list.map((product) => (
+                  <PuspaCard
+                    key={product.id}
+                    name={product.name}
+                    image={getSafeImage(product.image) || getSafeImage(product.merchant?.image) || "/img/default.jpg"}
+                    title={product.name}
+                    description={product.description}
+                    rating={product.rating}
+                    seller={product.merchant?.name || product.seller}
+                    location={product.location}
+                    category={product.category}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null
+        )
+      )}
+      {/* Statistics Cards */}
       <div className="mb-12 grid gap-y-10 gap-x-6 md:grid-cols-2 xl:grid-cols-4">
         {statisticsCardsData.map(({ icon, title, footer, ...rest }) => (
           <StatisticsCard

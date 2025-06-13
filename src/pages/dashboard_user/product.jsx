@@ -1,34 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PuspaCard } from "@/components/PuspaCard";
-import { faker } from '@faker-js/faker';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { getProducts } from '@/api/product';
+import { getToken } from '@/utils/auth';
 
 const PRODUCTS_PER_PAGE = 12;
 
+const placeIdByPath = {
+  '/puspa-taman-kota': 3,
+  '/siliwangi': 1,
+  '/langlangbuana': 2,
+};
+
 export function Product ()  {
   const [currentPage, setCurrentPage] = useState(1);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  const generateProducts = (count) => {
-    const products = [];
-    for (let i = 0; i < count; i++) {
-      products.push({
-        id: faker.string.uuid(),
-        name: faker.commerce.productName(),
-        image: faker.image.urlLoremFlickr({ width: 320, height: 240, category: 'food' }),
-        seller: faker.company.name(),
-        location: faker.location.city(),
-        category: faker.commerce.department(),
-        rating: (4 + Math.random()).toFixed(1)
-      });
+  useEffect(() => {
+    setCurrentPage(1); // Reset ke halaman 1 setiap ganti route
+    async function fetchProducts() {
+      setLoading(true);
+      try {
+        const token = getToken();
+        const res = await getProducts(token);
+        let all = res.data || res;
+        // Normalisasi path agar selalu tanpa /dashboard di depan
+        let path = location.pathname.replace(/^\/dashboard/, "");
+        if (!path.startsWith("/")) path = "/" + path;
+        const placeId = placeIdByPath[path];
+        if (placeId) {
+          all = all.filter((p) => p.merchant && p.merchant.place_id === placeId);
+        }
+        setProducts(all);
+      } catch {
+        setProducts([]);
+      } finally {
+        setLoading(false);
+      }
     }
-    return products;
-  };
+    fetchProducts();
+  }, [location.pathname]);
 
-  const allProducts = generateProducts(50);
-
-  const totalPages = Math.ceil(allProducts.length / PRODUCTS_PER_PAGE);
+  const totalPages = Math.ceil(products.length / PRODUCTS_PER_PAGE);
   const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
   const endIndex = startIndex + PRODUCTS_PER_PAGE;
-  const currentProducts = allProducts.slice(startIndex, endIndex);
+  const currentProducts = products.slice(startIndex, endIndex);
 
   const handlePreviousPage = () => {
     if (currentPage > 1) {
@@ -65,43 +84,68 @@ export function Product ()  {
     return pageNumbers;
   };
 
+  function getSafeImage(img) {
+    if (!img) return undefined;
+    if (img.includes("drive.google.com/open?id=")) {
+      const id = img.split("id=")[1];
+      return `https://drive.google.com/uc?export=view&id=${id}`;
+    }
+    if (img.includes("drive.google.com/file/d/")) {
+      const match = img.match(/\/d\/([\w-]+)/);
+      if (match && match[1]) {
+        return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+      }
+    }
+    // Jika image bukan link valid, fallback ke default
+    if (img.startsWith("/img/")) {
+      return img;
+    }
+    return undefined;
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-wrap gap-6">
-        {currentProducts.map((product) => (
-          <PuspaCard
-            key={product.id}
-            name={product.name}
-            image={product.image}
-            title={product.name}
-            description={product.description}
-            rating={product.rating}
-            seller={product.seller}
-            location={product.location}
-            category={product.category}
-          />
-        ))}
-      </div>
-
-      <div className="flex justify-center items-center mt-8">
-        <button
-          onClick={handlePreviousPage}
-          disabled={currentPage === 1}
-          className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
-        >
-          Previous
-        </button>
-        <div className="flex mx-4">
-          {renderPaginationNumbers()}
-        </div>
-        <button
-          onClick={handleNextPage}
-          disabled={currentPage === totalPages}
-          className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
-        >
-          Next
-        </button>
-      </div>
+      {loading ? (
+        <div className="text-center py-10 text-blue-gray-500">Loading products...</div>
+      ) : (
+        <>
+          <div className="flex flex-wrap gap-6">
+            {currentProducts.map((product) => (
+              <PuspaCard
+                key={product.id}
+                name={product.name}
+                image={getSafeImage(product.image) || getSafeImage(product.merchant?.image) || `/img/default.jpg`}
+                title={product.name}
+                description={product.description}
+                rating={product.rating}
+                seller={product.merchant?.name || product.seller}
+                location={product.location}
+                category={product.category}
+                onClick={() => navigate(`/dashboard/product/${product.id}`)}
+              />
+            ))}
+          </div>
+          <div className="flex justify-center items-center mt-8">
+            <button
+              onClick={handlePreviousPage}
+              disabled={currentPage === 1}
+              className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <div className="flex mx-4">
+              {renderPaginationNumbers()}
+            </div>
+            <button
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 };

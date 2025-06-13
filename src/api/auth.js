@@ -1,4 +1,5 @@
-const API_URL = "https://gopus-api-production.up.railway.app/api/v1";
+// const API_URL = "https://gopus-api-production.up.railway.app/api/v1";
+const API_URL = "http://localhost:3000/api/v1";
 
 export async function register(email, fullname, phone, password) {
   const payload = { email, fullname, phone, password };
