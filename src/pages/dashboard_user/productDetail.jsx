@@ -126,11 +126,11 @@ export function ProductDetail() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="w-full py-8">
       <Button onClick={() => navigate(-1)} className="mb-4">Kembali</Button>
       <Card className="p-6 flex flex-col md:flex-row gap-8 items-start">
         <img
-          src={product.image ? `http://localhost:3000/uploads/${product.image}` : "/img/default.jpg"}
+          src={product.image ? `http://localhost:3000/uploads/${product.image}` : "/img/placeholder.jpg"}
           alt={product.name}
           className="w-full md:w-80 h-64 object-cover rounded-xl border"
         />
@@ -139,7 +139,16 @@ export function ProductDetail() {
           <Typography variant="paragraph" className="mb-2">{product.description}</Typography>
           <Typography variant="small" className="mb-1 text-blue-gray-600">Harga: Rp{product.price}</Typography>
           <Typography variant="small" className="mb-1 text-blue-gray-600">Status: {product.status}</Typography>
-          <Typography variant="small" className="mb-1 text-blue-gray-600">Merchant: {product.merchant?.name}</Typography>
+          <div className="flex items-center gap-2 mt-2 cursor-pointer" onClick={() => navigate(`/dashboard/merchant/${product.merchant_id}`)}>
+            <img
+              src={product.merchant?.image ? `http://localhost:3000/uploads/${product.merchant.image}` : "/img/placeholder.png"}
+              alt={product.merchant?.name}
+              className="w-8 h-8 rounded-full border object-cover"
+            />
+            <Typography variant="small" className="text-blue-700 font-semibold hover:underline">
+              {product.merchant?.name}
+            </Typography>
+          </div>
           <Typography variant="small" className="mb-1 text-blue-gray-600">Owner: {product.merchant?.owner_name}</Typography>
           <Typography variant="small" className="mb-1 text-blue-gray-600">No. HP: {product.merchant?.phone}</Typography>
           <Button className="mt-4" color="green" onClick={() => setShowOrderForm(true)}>

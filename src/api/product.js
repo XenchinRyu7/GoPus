@@ -46,3 +46,15 @@ export async function deleteProduct(token, id) {
   if (!res.ok) throw new Error("Failed to delete product");
   return res.json();
 }
+
+export async function getProductsByMerchant(token, merchant_id) {
+  const res = await fetch(`${API_URL}/product?merchant_id=${merchant_id}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) throw new Error("Failed to fetch products by merchant");
+  return res.json();
+}

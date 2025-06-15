@@ -69,32 +69,34 @@ export function Sidenav({ brandImg, brandName, routes }) {
                   </Typography>
                 </li>
               )}
-              {pages.filter(page => !page.path.includes(":")).map(({ icon, name, path }) => (
-                <li key={name}>
-                  <NavLink to={`/${layout}${path}`}>
-                    {({ isActive }) => (
-                      <Button
-                        variant={isActive && sidenavColor === "green" ? "text" : isActive ? "gradient" : "text"}
-                        color={isActive && sidenavColor === "green" ? undefined : isActive ? sidenavColor : sidenavType === "dark" ? "white" : "blue-gray"}
-                        className={`flex items-center gap-4 px-4 capitalize ${
-                          isActive && sidenavColor === "green"
-                            ? "!bg-[#00B07426] !border-[#00B07426] !text-[#00B074] !shadow-none"
-                            : ""
-                        }`}
-                        fullWidth
-                      >
-                        {icon}
-                        <Typography
-                          color="inherit"
-                          className="font-medium capitalize"
+              {pages
+                .filter(page => !page.path.includes(":") && !(page.path && page.path.startsWith("/merchant/")))
+                .map(({ icon, name, path }) => (
+                  <li key={name}>
+                    <NavLink to={`/${layout}${path}`}>
+                      {({ isActive }) => (
+                        <Button
+                          variant={isActive && sidenavColor === "green" ? "text" : isActive ? "gradient" : "text"}
+                          color={isActive && sidenavColor === "green" ? undefined : isActive ? sidenavColor : sidenavType === "dark" ? "white" : "blue-gray"}
+                          className={`flex items-center gap-4 px-4 capitalize ${
+                            isActive && sidenavColor === "green"
+                              ? "!bg-[#00B07426] !border-[#00B07426] !text-[#00B074] !shadow-none"
+                              : ""
+                          }`}
+                          fullWidth
                         >
-                          {name}
-                        </Typography>
-                      </Button>
-                    )}
-                  </NavLink>
-                </li>
-              ))}
+                          {icon}
+                          <Typography
+                            color="inherit"
+                            className="font-medium capitalize"
+                          >
+                            {name}
+                          </Typography>
+                        </Button>
+                      )}
+                    </NavLink>
+                  </li>
+                ))}
             </ul>
           ))}
         </div>

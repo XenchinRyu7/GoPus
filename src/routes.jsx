@@ -3,6 +3,7 @@ import { Home, Profile, Tables, Notifications, TableUsers, TableSellers, TableOr
 import { HomeUser, Product, HistoryPayment, Orders, ProfileUser } from "@/pages/dashboard_user";
 import { SignIn, SignUp } from "@/pages/auth";
 import { ProductDetail } from "@/pages/dashboard_user/productDetail";
+import MerchantProducts from "@/pages/dashboard_user/merchantProducts";
 
 const icon = {
   className: "w-5 h-5 text-inherit",
@@ -109,6 +110,13 @@ export const routes = [
         name: "Product Detail",
         path: "/product/:id",
         element: <ProductDetail />, // detail produk
+        role: "customer",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Produk Merchant",
+        path: "/merchant/:merchant_id",
+        element: <MerchantProducts />, // Halaman produk merchant
         role: "customer",
       },
     ],
