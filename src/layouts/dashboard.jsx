@@ -36,7 +36,7 @@ export function Dashboard() {
       <Sidenav
         routes={filteredRoutes.filter((route) => route.layout === "dashboard")}
         brandImg={
-          sidenavType === "dark" ? "/img/gopus_logo.svg" : "/img/gopus_logo.svg"
+          sidenavType === "dark" ? "/img/gopus_logo.jpg" : "/img/gopus_logo.jpg"
         }
       />
       <div className="p-4 xl:ml-80">
